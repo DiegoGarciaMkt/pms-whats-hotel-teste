@@ -19,6 +19,11 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
+// --- Health Check (Para o Render não derrubar o serviço) ---
+app.get('/health', (req, res) => {
+    res.status(200).send('OK');
+});
+
 // --- Supabase ---
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
@@ -121,7 +126,9 @@ app.post('/whatsapp/start-session', async (req, res) => {
   if (sessions[sessionKey]) return res.json({ status: 'ALREADY_RUNNING' });
 
   await supabase.from('whatsapp_sessions').upsert({ id: sessionKey, hotel_id, session_name: 'Principal', status: 'STARTING' });
-  startVenomSession(sessionKey, hotel_id);
+  // Inicia em background para não travar a requisição HTTP (Venom demora)
+  startVenomSession(sessionKey, hotel_id).catch(err => console.error("Erro async start:", err));
+  
   res.json({ status: 'STARTING' });
 });
 
@@ -147,5 +154,6 @@ app.post('/whatsapp/send', async (req, res) => {
   }
 });
 
-const PORT = 3001;
+// --- AJUSTE CRÍTICO AQUI ---
+const PORT = process.env.PORT || 3001; // Usa a porta do Render OU 3001 localmente
 server.listen(PORT, () => console.log(`Service running on port ${PORT}`));
