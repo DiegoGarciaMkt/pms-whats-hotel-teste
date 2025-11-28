@@ -1,0 +1,5 @@
+{
+  "name": "Mini-Hotel Management System",
+  "description": "A web application for a mini-hotel that includes a public booking system for guests and a reception panel for managing check-ins, check-outs, and viewing room occupancy, designed to work with a Supabase backend.",
+  "requestFramePermissions": []
+}

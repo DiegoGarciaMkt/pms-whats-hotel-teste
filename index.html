@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Supa | Reservas Online</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        .hero-pattern {
+            background-color: #1e1b4b;
+            background-image: url("https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80");
+            background-blend-mode: multiply;
+            background-size: cover;
+            background-position: center;
+        }
+    </style>
+<script type="importmap">
+{
+  "imports": {
+    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.86.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "socket.io-client": "https://aistudiocdn.com/socket.io-client@^4.8.1"
+  }
+}
+</script>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+
+    <script>
+        const SUPABASE_URL = 'https://wghfrffnnxxcgqvvijdv.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndnaGZyZmZubnh4Y2dxdnZpamR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyOTA3MDcsImV4cCI6MjA3OTg2NjcwN30.OU8f1u9X0O3Q2gkqaG2v8H_dgaLLl7loJgw1K0akO6k';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    </script>
+
+    <nav class="bg-white shadow-md fixed w-full z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fa-solid fa-hotel text-indigo-600 text-2xl mr-2"></i>
+                    <span class="font-bold text-xl tracking-tight text-gray-800">Hotel Supa</span>
+                </div>
+                <div class="flex items-center">
+                    <a href="admin.html" class="text-sm text-gray-500 hover:text-indigo-600 font-medium transition">
+                        <i class="fa-solid fa-lock"></i> Área Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="hero-pattern h-[600px] flex items-center justify-center relative">
+        <div class="text-center px-4">
+            <h1 class="text-4xl md:text-6xl font-bold text-white mb-4 shadow-sm">Sua Estadia Perfeita</h1>
+            <p class="text-indigo-200 text-lg md:text-xl mb-8">Conforto, luxo e simplicidade.</p>
+            
+            <div class="bg-white p-6 rounded-lg shadow-2xl max-w-4xl mx-auto transform translate-y-8">
+                <form id="searchForm" class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Check-in</label>
+                        <input type="date" id="checkIn" class="w-full border p-2 rounded outline-none" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Check-out</label>
+                        <input type="date" id="checkOut" class="w-full border p-2 rounded outline-none" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Hóspedes</label>
+                        <select id="guests" class="w-full border p-2 rounded outline-none bg-white">
+                            <option value="1">1 Adulto</option>
+                            <option value="2" selected>2 Adultos</option>
+                            <option value="3">3 Adultos</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded transition duration-200 flex justify-center items-center gap-2">
+                        <i class="fa-solid fa-magnifying-glass"></i> Buscar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <section id="resultsSection" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 min-h-[400px]">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 border-l-4 border-indigo-600 pl-3">Acomodações Disponíveis</h2>
+        <div id="loading" class="hidden text-center py-10"><i class="fa-solid fa-circle-notch fa-spin text-4xl text-indigo-600"></i></div>
+        <div id="roomsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="col-span-full text-center py-10 bg-gray-100 rounded-lg border border-dashed border-gray-300">
+                <i class="fa-regular fa-calendar-check text-4xl text-gray-400 mb-2"></i>
+                <p class="text-gray-500">Selecione suas datas acima.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- MODAL -->
+    <div id="bookingModal" class="fixed inset-0 z-[100] hidden bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all">
+            <div class="bg-indigo-600 px-6 py-4 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-white">Confirmar Reserva</h3>
+                <button onclick="closeModal()" class="text-white hover:text-indigo-200"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+            <div class="p-6">
+                <div class="bg-indigo-50 p-4 rounded-lg mb-6 flex justify-between items-center border border-indigo-100">
+                    <div>
+                        <p class="text-sm text-indigo-800 font-medium" id="modalRoomInfo">Standard</p>
+                        <p class="text-xs text-indigo-600" id="modalDates">Datas</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-indigo-600 uppercase font-bold">Total</p>
+                        <p class="text-2xl font-bold text-indigo-900" id="modalPrice">R$ 0,00</p>
+                    </div>
+                </div>
+                <form id="guestForm" class="space-y-4">
+                    <input type="hidden" id="selectedRoomType">
+                    <input type="hidden" id="totalAmount">
+                    <div class="grid grid-cols-1 gap-4">
+                        <input type="text" id="fullName" placeholder="Nome Completo" class="w-full border p-2 rounded outline-none" required>
+                        <input type="email" id="email" placeholder="Email" class="w-full border p-2 rounded outline-none" required>
+                        <input type="tel" id="phone" placeholder="Telefone" class="w-full border p-2 rounded outline-none" required>
+                    </div>
+                    <button type="submit" id="btnConfirm" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded shadow-lg mt-4">Confirmar e Reservar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('checkIn').min = today;
+        document.getElementById('checkOut').min = today;
+        document.getElementById('checkIn').addEventListener('change', (e) => {
+            const next = new Date(e.target.value); next.setDate(next.getDate() + 1);
+            document.getElementById('checkOut').min = next.toISOString().split('T')[0];
+            document.getElementById('checkOut').value = next.toISOString().split('T')[0];
+        });
+
+        let currentSearch = {};
+
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const cin = document.getElementById('checkIn').value;
+            const cout = document.getElementById('checkOut').value;
+            const guests = parseInt(document.getElementById('guests').value);
+            currentSearch = { in: cin, out: cout, guests };
+
+            const grid = document.getElementById('roomsGrid');
+            const loader = document.getElementById('loading');
+            grid.classList.add('hidden'); loader.classList.remove('hidden');
+
+            try {
+                // USA A NOVA RPC: get_available_rooms_public
+                const { data, error } = await supabaseClient.rpc('get_available_rooms_public', {
+                    check_in_date: cin, check_out_date: cout, guests_count: guests
+                });
+
+                if (error) throw error;
+                
+                grid.innerHTML = '';
+                grid.classList.remove('hidden');
+
+                if (!data || data.length === 0) {
+                    grid.innerHTML = '<div class="col-span-full text-center py-10"><p class="text-xl text-gray-500">Sem vagas para o período.</p></div>';
+                    return;
+                }
+
+                const days = Math.ceil((new Date(cout) - new Date(cin)) / (1000 * 60 * 60 * 24));
+
+                data.forEach(room => {
+                    const total = room.price * days;
+                    const div = document.createElement('div');
+                    div.className = 'bg-white rounded-lg shadow-lg border hover:shadow-xl transition flex flex-col';
+                    div.innerHTML = `
+                        <div class="h-48 bg-gray-200 relative">
+                            <img src="https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&q=80" class="w-full h-full object-cover rounded-t-lg">
+                            <span class="absolute top-2 right-2 bg-white px-2 py-1 rounded text-xs font-bold shadow text-indigo-600">${room.available_count} livres</span>
+                        </div>
+                        <div class="p-6 flex-1 flex flex-col">
+                            <h3 class="text-xl font-bold text-gray-800 mb-2 capitalize">${room.room_type}</h3>
+                            <p class="text-gray-500 text-sm mb-4">Acomodação confortável.</p>
+                            <div class="mt-auto border-t pt-4 flex justify-between items-center">
+                                <div><p class="text-xs text-gray-500">${days} noites</p><p class="text-2xl font-bold text-green-600">R$ ${total.toFixed(2)}</p></div>
+                                <button onclick="openModal('${room.room_type}', ${total})" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded font-bold">Reservar</button>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(div);
+                });
+
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Erro', 'Falha ao buscar quartos.', 'error');
+            } finally { loader.classList.add('hidden'); }
+        });
+
+        function openModal(type, total) {
+            document.getElementById('selectedRoomType').value = type;
+            document.getElementById('totalAmount').value = total;
+            document.getElementById('modalRoomInfo').innerText = type.toUpperCase();
+            document.getElementById('modalPrice').innerText = `R$ ${total.toFixed(2)}`;
+            document.getElementById('modalDates').innerText = `${new Date(currentSearch.in).toLocaleDateString('pt-BR')} - ${new Date(currentSearch.out).toLocaleDateString('pt-BR')}`;
+            document.getElementById('bookingModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('bookingModal').classList.add('hidden');
+            document.getElementById('guestForm').reset();
+        }
+
+        document.getElementById('guestForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btnConfirm');
+            btn.innerHTML = 'Processando...'; btn.disabled = true;
+
+            const payload = {
+                p_full_name: document.getElementById('fullName').value,
+                p_email: document.getElementById('email').value,
+                p_phone: document.getElementById('phone').value,
+                p_room_type: document.getElementById('selectedRoomType').value,
+                p_check_in: currentSearch.in,
+                p_check_out: currentSearch.out,
+                p_total_amount: document.getElementById('totalAmount').value
+            };
+
+            try {
+                // USA NOVA RPC: create_public_reservation
+                const { data, error } = await supabaseClient.rpc('create_public_reservation', payload);
+                if (error) throw error;
+
+                closeModal();
+                Swal.fire('Reserva Confirmada!', 'Obrigado pela preferência.', 'success')
+                    .then(() => document.getElementById('searchForm').dispatchEvent(new Event('submit')));
+            } catch (err) {
+                console.error(err);
+                Swal.fire('Erro', 'Não foi possível completar a reserva.', 'error');
+            } finally {
+                btn.innerHTML = 'Confirmar e Reservar'; btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
