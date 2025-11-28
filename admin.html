@@ -81,7 +81,7 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndnaGZyZmZubnh4Y2dxdnZpamR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyOTA3MDcsImV4cCI6MjA3OTg2NjcwN30.OU8f1u9X0O3Q2gkqaG2v8H_dgaLLl7loJgw1K0akO6k';
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
-        // URL do Backend Node.js (Venom) - Deve apontar para onde o Docker está rodando
+        // URL DO BACKEND LOCAL - ALTERADO PARA RODAR NO SEU COMPUTADOR
         const WA_API_URL = 'http://localhost:3001'; 
     </script>
 
@@ -412,7 +412,7 @@
 
     <script>
         // --- ESTADO & CONFIG ---
-        const HOTEL_ID_MOCK = 'f47ac10b-58cc-4372-a567-0e02b2c3d479'; // MOCK TEMPORÁRIO
+        const HOTEL_ID_MOCK = 'f47ac10b-58cc-4372-a567-0e02b2c3d479'; 
         let currentBooking = null;
         let chartInstances = {};
         const daysToShow = 30;
@@ -449,9 +449,9 @@
 
         function handleWaUpdate(payload) {
             if(document.getElementById('view-whatsapp').classList.contains('hidden')) return;
-            loadWaChats(); // Atualiza lista se nova mensagem chegar
+            loadWaChats(); 
             if(activeChat && payload.new.contact_id === activeChat.contact_id) {
-                appendMessage(payload.new); // Append se for chat ativo
+                appendMessage(payload.new);
             }
         }
 
@@ -468,7 +468,7 @@
         function initWhatsapp() {
             if (waSocket) return;
             
-            // Verifica se o backend está acessível antes de tentar conectar
+            // Verifica se o backend está acessível
             fetch(WA_API_URL).catch(() => {
                 updateWaStatus('BACKEND OFF');
                 showWaState('disconnected');
@@ -562,10 +562,8 @@
             document.getElementById('activeChatId').value = chat.contact_id;
             document.getElementById('activeChatPhone').value = chat.whatsapp_contacts.phone;
             
-            // UI Update
-            loadWaChats(); // To update active highlight
+            loadWaChats(); 
             
-            // Load messages
             const { data: msgs } = await supabaseClient.from('whatsapp_messages').select('*').eq('contact_id', chat.contact_id).order('timestamp', { ascending: true }).limit(50);
             const container = document.getElementById('chatMessages');
             container.innerHTML = '';
@@ -590,7 +588,6 @@
             const text = input.value.trim();
             if(!text) return;
             
-            // Otimistic UI
             appendMessage({ direction: 'out', message: text, timestamp: new Date() });
             input.value = '';
 

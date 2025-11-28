@@ -30,10 +30,10 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SER
 // --- Sessões Venom em Memória ---
 const sessions = {};
 
-// Normaliza telefone (remove caracteres e garante 55 + DDD + Numero)
+// Normaliza telefone
 const normalizePhone = (phone) => {
   let p = phone.replace(/\D/g, '');
-  if (!p.startsWith('55') && p.length <= 11) p = '55' + p; // Assume BR se curto
+  if (!p.startsWith('55') && p.length <= 11) p = '55' + p; 
   return p.includes('@c.us') ? p : `${p}@c.us`;
 };
 
@@ -63,7 +63,15 @@ const startVenomSession = async (sessionKey, hotelId) => {
       {
         folderNameToken: 'tokens',
         headless: 'new',
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-accelerated-2d-canvas', '--no-first-run', '--no-zygote', '--disable-gpu']
+        args: [
+            '--no-sandbox', 
+            '--disable-setuid-sandbox', 
+            '--disable-dev-shm-usage', 
+            '--disable-accelerated-2d-canvas', 
+            '--no-first-run', 
+            '--no-zygote', 
+            '--disable-gpu'
+        ]
       }
     );
 
@@ -76,7 +84,6 @@ const startVenomSession = async (sessionKey, hotelId) => {
       console.log(`[Msg] De ${fromPhone}: ${text}`);
 
       try {
-        // 1. Contato
         let { data: contact } = await supabase.from('whatsapp_contacts').select('id').eq('phone', fromPhone).single();
         if (!contact) {
           const { data: newContact, error } = await supabase.from('whatsapp_contacts').insert({
@@ -88,7 +95,6 @@ const startVenomSession = async (sessionKey, hotelId) => {
         }
 
         if (contact) {
-            // 2. Salvar Mensagem
             const { data: savedMsg } = await supabase.from('whatsapp_messages').insert({
                 hotel_id: hotelId,
                 contact_id: contact.id,
@@ -99,7 +105,6 @@ const startVenomSession = async (sessionKey, hotelId) => {
                 timestamp: new Date(message.timestamp * 1000)
             }).select().single();
 
-            // 3. Atualizar Chat
             await supabase.from('whatsapp_chats').upsert({
                 hotel_id: hotelId,
                 contact_id: contact.id,
@@ -107,7 +112,6 @@ const startVenomSession = async (sessionKey, hotelId) => {
                 last_message_at: new Date()
             }, { onConflict: 'hotel_id, contact_id' });
 
-            // 4. Socket
             io.to(`session:${sessionKey}`).emit('message', { sessionKey, chatId: contact.id, message: savedMsg });
         }
       } catch (err) { console.error('Erro DB:', err); }
@@ -126,7 +130,7 @@ app.post('/whatsapp/start-session', async (req, res) => {
   if (sessions[sessionKey]) return res.json({ status: 'ALREADY_RUNNING' });
 
   await supabase.from('whatsapp_sessions').upsert({ id: sessionKey, hotel_id, session_name: 'Principal', status: 'STARTING' });
-  // Inicia em background para não travar a requisição HTTP (Venom demora)
+  // Inicia em background
   startVenomSession(sessionKey, hotel_id).catch(err => console.error("Erro async start:", err));
   
   res.json({ status: 'STARTING' });
@@ -154,6 +158,6 @@ app.post('/whatsapp/send', async (req, res) => {
   }
 });
 
-// --- AJUSTE CRÍTICO AQUI ---
-const PORT = process.env.PORT || 3001; // Usa a porta do Render OU 3001 localmente
+// Porta Dinâmica (Render)
+const PORT = process.env.PORT || 3001; 
 server.listen(PORT, () => console.log(`Service running on port ${PORT}`));
