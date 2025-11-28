@@ -1,7 +1,7 @@
-
 {
-  "name": "pms-whatsapp-service",
+  "name": "pms-whatsapp-server",
   "version": "1.0.0",
+  "description": "Servidor Local WhatsApp com Venom Bot e Supabase",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -13,10 +13,12 @@
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "socket.io": "^4.7.2",
-    "venom-bot": "^5.0.21",
-    "winston": "^3.11.0"
+    "venom-bot": "^5.0.21"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
