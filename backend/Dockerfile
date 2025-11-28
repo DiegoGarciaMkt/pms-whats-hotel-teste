@@ -1,4 +1,3 @@
-# Instala dependencias do sistema para o Chrome/Puppeteer
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
@@ -21,16 +20,12 @@ RUN apt-get update && apt-get install -y \
     libpangocairo-1.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# Configura diretorio
 WORKDIR /usr/src/app
 
-# Copia dependencias e instala
 COPY package*.json ./
 RUN npm install
 
-# Copia o codigo fonte
 COPY . .
 
-# Porta e inicializacao
 EXPOSE 3001
 CMD ["node", "server.js"]
